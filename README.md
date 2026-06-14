@@ -1,79 +1,189 @@
-# Webshell Detection System
+## Project Structure
 
-## 📖 Project Overview
-
-WebshellDEtect is a machine learning-based Webshell detection system designed to help security researchers and administrators discover malicious PHP scripts on servers. The system adopts an MVC architecture, combining PHP Opcode analysis with various machine learning algorithms (such as XGBoost, Random Forest, SVM, etc.) to provide efficient and accurate detection capabilities.
-
-The system is equipped with a graphical user interface (GUI) based on PyQt5, supporting functions such as user management, model training, file scanning, log viewing, etc., with intuitive and convenient operations.
-
-## ✨ Key Features
-
-- **Multi-model Support**: Built-in support for multiple machine learning algorithms, including:
-    - XGBoost
-    - Random Forest
-    - Decision Tree
-    - Linear SVM (Linear Support Vector Machine)
-    - Naive Bayes
-- **In-depth Opcode Analysis**: Utilizes the PHP VLD extension to extract the Opcode sequence of scripts, vectorizes features based on TF-IDF, performs detection at the in-depth code logic layer, and effectively combats code obfuscation.
-- **Real-time Detection and Scanning**: Supports single-file and directory scanning, enabling quick identification of potential Webshell files.
-- **Custom Training**: Users can upload malicious and benign samples to retrain the model to adapt to new threat environments.
-- **User Management System**: Built-in SQLite database, supporting user registration, login, and personal file management.
-- **Detection Reports and Logs**: Automatically generates detection reports and provides detailed log recording functions.
-
-## 🛠️ Requirements
-
-### Basic Environment
-- **Operating System**: macOS / Linux / Windows
-- **Python**: 3.8+
-- **PHP**: 7.x/8.x (VLD extension must be installed)
-
-### PHP VLD Extension Installation
-The detection core relies on PHP's VLD (Vulcan Logic Dumper) extension to extract Opcode. Please ensure that your environment has been correctly installed and configured.
-
-**Linux/macOS:**
-```bash
-pecl install vld
-# And add in php.ini: extension=vld.so
+```text
+ML-WebshellDetect/
+├── Controller/              # GUI controllers and interaction logic
+├── Data/                    # Data-related resources and runtime files
+├── Model/                   # Database and model-related modules
+├── Utils/                   # Core utility functions for preprocessing, training, and detection
+├── View/                    # PyQt5 GUI pages and UI components
+├── main.py                  # Application entry point
+└── README.md
 ```
 
-### Python Dependencies
-The project depends on the following Python libraries, please install them using pip:
+The project follows an MVC-style architecture. The GUI layer handles user interaction, the controller layer coordinates workflows, and the model/service logic manages preprocessing, feature extraction, machine learning training, detection, logging, and model management.
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
-pip install PyQt5 scikit-learn xgboost rich joblib
+git clone https://github.com/Hongbin10/ML-WebshellDetect.git
+cd ML-WebshellDetect
 ```
 
-## 🚀 Installation & Usage
+### 2. Create a Python environment
 
-1. **Clone the Project**
-    ```bash
-    git clone <repository_url>
-    cd WebshellDEtect
-    ```
+Python 3.8+ is recommended.
 
-2. **Install Dependencies**
-    Ensure that you have installed all the above Python libraries and the PHP VLD environment.
-
-3. **Run the System**
-    Execute in the project root directory:
-    ```bash
-    python main.py
-    ```
-
-4. **System Login**
-    - A login interface will be displayed after startup.
-    - If it's your first use, please register according to the prompts or use the default credentials (if any).
-
-## 📂 Project Structure
-
+```bash
+python -m venv venv
+source venv/bin/activate      # macOS / Linux
+# venv\Scripts\activate       # Windows
 ```
-WebshellDEtect/
-├── Controller/         # Control layer: handles business logic threads (detection, training, processing)
-├── Model/              # Model layer: contains core algorithms, database interaction, Opcode extraction
-│   ├── detect.py       # Detection logic
-│   ├── train.py        # Model training logic
-│   └── database.py     # Database operations
-├── View/               # View layer: PyQt5 GUI interface code
-│   ├── main_window.py  # Main window
-│   └── ...             # Various functional pages
-├── Utils/
+
+### 3. Install Python dependencies
+
+```bash
+pip install pyqt5 scikit-learn xgboost joblib rich
+```
+
+Depending on your local environment, you may also need:
+
+```bash
+pip install numpy scipy pandas
+```
+
+### 4. Install PHP and PHP VLD
+
+This project relies on PHP VLD to convert PHP files into opcode sequences.
+
+Check whether PHP is installed:
+
+```bash
+php -v
+```
+
+Check whether VLD is available:
+
+```bash
+php -m | grep vld
+```
+
+The opcode extraction pipeline internally calls commands similar to:
+
+```bash
+php -dvld.active=1 -dvld.execute=0 -dvld.dump_paths=0 -f sample.php
+```
+
+If VLD is not installed, install the PHP VLD extension according to your operating system and PHP version.
+
+### 5. Run the application
+
+```bash
+python main.py
+```
+
+## Usage
+
+### 1. Preprocess datasets
+
+Prepare two folders:
+
+```text
+dataset/
+├── malicious/     # PHP WebShell samples
+└── benign/        # benign PHP files
+```
+
+In the GUI, select the malicious and benign sample directories, then run preprocessing.
+
+The preprocessing module will:
+
+* recursively collect valid `.php` files;
+* check PHP syntax with `php -l`;
+* normalize filenames using MD5 hashes;
+* copy processed files into clean output folders;
+* report progress through the GUI.
+
+### 2. Train machine learning models
+
+After preprocessing, select a model type in the training page.
+
+Supported classifiers include:
+
+* XGBoost
+* Random Forest
+* Decision Tree
+* Linear SVM
+* Naive Bayes
+
+The training pipeline will:
+
+* extract PHP opcode sequences using VLD;
+* construct 2--4 gram opcode features using CountVectorizer;
+* transform feature vectors with TF-IDF;
+* train and tune classifiers with GridSearchCV;
+* evaluate models using accuracy, precision, recall, and F1-score;
+* save trained models and feature extractors for later detection.
+
+### 3. Manage trained models
+
+The model management page allows users to:
+
+* view trained models;
+* compare model metrics;
+* select the active detection model;
+* delete unused models.
+
+### 4. Detect PHP WebShell files
+
+The detection module supports both:
+
+* single-file detection;
+* batch directory scanning.
+
+For each PHP file, the system extracts opcode sequences, transforms them into TF-IDF features using the saved feature extractor, and predicts whether the file is benign or malicious using the selected machine learning model.
+
+### 5. Generate reports and handle malicious files
+
+After detection, the system can:
+
+* display detection results in the GUI;
+* generate detection logs;
+* generate HTML detection reports;
+* optionally delete detected high-risk files.
+
+## Screenshots
+
+> Suggested screenshot files should be placed under a `screenshots/` folder.
+
+### Data Preprocessing
+
+```markdown
+![Data Preprocessing](screenshots/data_preprocessing.png)
+```
+
+Shows the dataset preprocessing workflow, including malicious/benign sample directory selection, output directory selection, progress display, and preprocessing logs.
+
+### Model Training
+
+```markdown
+![Model Training](screenshots/model_training.png)
+```
+
+Shows the machine learning training page, including model selection, training progress, real-time logs, and training result display.
+
+### Model Management
+
+```markdown
+![Model Management](screenshots/model_management.png)
+```
+
+Shows trained model versions, evaluation metrics, active model selection, and model deletion.
+
+### WebShell Detection
+
+```markdown
+![WebShell Detection](screenshots/detection.png)
+```
+
+Shows single-file or directory-based WebShell detection, prediction results, and high-risk file handling.
+
+### Detection Report
+
+```markdown
+![Detection Report](screenshots/report.png)
+```
+
+Shows the generated HTML detection report, including scanned files, detected malicious files, and summary statistics.
